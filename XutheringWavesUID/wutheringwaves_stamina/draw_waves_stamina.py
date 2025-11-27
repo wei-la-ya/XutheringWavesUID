@@ -33,10 +33,12 @@ from ..utils.image import (
     add_footer,
     get_event_avatar,
     get_random_waves_role_pile,
+    get_random_waves_bg
 )
 from ..utils.name_convert import char_name_to_char_id
 from ..utils.resource.constant import SPECIAL_CHAR
 from ..utils.waves_api import waves_api
+from ..wutheringwaves_config.wutheringwaves_config import ShowConfig
 
 TEXT_PATH = Path(__file__).parent / "texture2d"
 YES = Image.open(TEXT_PATH / "yes.png")
@@ -181,10 +183,34 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
                     break
         else:
             pile_id = char_id
-    pile = await get_random_waves_role_pile(pile_id)
-    # pile = pile.crop((0, 0, pile.size[0], pile.size[1] - 155))
+    
+    if ShowConfig.get_config("MrUseBG"):
+        pile, has_bg = await get_random_waves_bg(pile_id)
+    else:
+        pile = await get_random_waves_role_pile(pile_id)
+        has_bg = False
+
+    # [修改逻辑] 尺寸修正为 1150x770，黏贴位置不变 (0, 40)
+    if ShowConfig.get_config("MrUseBG") and has_bg:
+        # 缩放到正好不少于1150x770
+        bg_w, bg_h = pile.size
+        target_w, target_h = 1150, 770 # 这里修正为770
+        ratio = max(target_w / bg_w, target_h / bg_h)
+        new_size = (int(bg_w * ratio), int(bg_h * ratio))
+        pile = pile.resize(new_size, Image.LANCZOS)
+        
+        # 切中心的1150x770
+        left = (pile.width - target_w) // 2
+        top = (pile.height - target_h) // 2
+        pile = pile.crop((left, top, left + target_w, top + target_h))
+        
+        # 黏贴在img的中心 (img整体高度850，中间留给背景的是770，上下各40padding)
+        img.paste(pile, (0, 40))
+        
+        info = Image.open(TEXT_PATH / "main_bar_bg.png").convert("RGBA")
 
     base_info_draw = ImageDraw.Draw(base_info_bg)
+    # [恢复逻辑] Base Info 不加底色，直接绘制文字
     base_info_draw.text(
         (275, 120), f"{daily_info.roleName[:7]}", GREY, waves_font_30, "lm"
     )
@@ -195,6 +221,7 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
 
     title_bar = Image.open(TEXT_PATH / "title_bar.png")
     title_bar_draw = ImageDraw.Draw(title_bar)
+    # [恢复逻辑] Title Bar 不加底色，直接绘制文字
     title_bar_draw.text((480, 125), "战歌重奏", GREY, waves_font_26, "mm")
     color = RED if account_info.weeklyInstCount != 0 else GREEN
     if (
@@ -241,11 +268,12 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
     )
     # remain_time = await seconds2hours(refreshTimeStamp - curr_time)
 
-    time_img = Image.new("RGBA", (190, 33), (255, 255, 255, 0))
+    time_img = Image.new("RGBA", (180, 33), (255, 255, 255, 0))
     time_img_draw = ImageDraw.Draw(time_img)
     time_img_draw.rounded_rectangle(
-        [0, 0, 190, 33], radius=15, fill=(186, 55, 42, int(0.7 * 255))
+        [5, 0, 180, 33], radius=15, fill=(186, 55, 42, int(0.7 * 255))
     )
+
     if refreshTimeStamp != curr_time:
         date_from_timestamp = datetime.fromtimestamp(refreshTimeStamp)
         now = datetime.now()
@@ -271,6 +299,16 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
     info.alpha_composite(time_img, (280, 50))
 
     max_len = 345
+    
+    if ShowConfig.get_config("MrUseBG") and has_bg:
+        dark_bg_color = (16, 26, 54, 200)
+        # 体力 (Y=115)
+        active_draw.rounded_rectangle((344 - 19 * len(f"{daily_info.energyData.cur}"), 98, 430, 135), radius=15, fill=dark_bg_color)
+        # 结晶 (Y=230)
+        active_draw.rounded_rectangle((344 - 19 * len(f"{account_info.storeEnergy}"), 213, 430, 250), radius=15, fill=dark_bg_color)
+        # 活跃度 (Y=350)
+        active_draw.rounded_rectangle((344 - 19 * len(f"{daily_info.livenessData.cur}"), 333, 430, 370), radius=15, fill=dark_bg_color)
+
     # 体力
     active_draw.text(
         (350, 115), f"/{daily_info.energyData.total}", GREY, waves_font_30, "lm"
@@ -320,6 +358,9 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
     status_img.alpha_composite(sign_in_icon, (0, 0))
     status_img_draw.text((50, 20), f"{sing_in_text}", "white", waves_font_30, "lm")
     img.alpha_composite(status_img, (70, 80))
+    if ShowConfig.get_config("MrUseBG") and has_bg:
+        img.alpha_composite(status_img, (70, 80))
+        img.alpha_composite(status_img, (70, 80))
 
     # 活跃状态
     status_img2 = Image.new("RGBA", (230, 40), (255, 255, 255, 0))
@@ -328,19 +369,21 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
     status_img2.alpha_composite(active_icon, (0, 0))
     status_img2_draw.text((50, 20), f"{active_text}", "white", waves_font_30, "lm")
     img.alpha_composite(status_img2, (70, 140))
-
-    # bbs状态
-    # status_img3 = Image.new("RGBA", (300, 40), (255, 255, 255, 0))
-    # status_img3_draw = ImageDraw.Draw(status_img3)
-    # status_img3_draw.rounded_rectangle([0, 0, 300, 40], fill=(0, 0, 0, int(0.3 * 255)))
-    # status_img3.alpha_composite(bbs_icon, (0, 0))
-    # status_img3_draw.text((50, 20), f"{bbs_text}", "white", waves_font_30, "lm")
-    # img.alpha_composite(status_img3, (70, 80))
+    if ShowConfig.get_config("MrUseBG") and has_bg:
+        img.alpha_composite(status_img2, (70, 140))
+        img.alpha_composite(status_img2, (70, 140))
 
     # pile 放在背景上
-    img.paste(pile, (550, -150), pile)
+    # 如果不是自定义背景，则按原样贴立绘
+    if not (ShowConfig.get_config("MrUseBG") and has_bg):
+        img.paste(pile, (550, -150), pile)
+
     # 贴个bar_down
     img.alpha_composite(bar_down, (0, 0))
+    # [新增逻辑] 自定义背景下，加深 bar_down 颜色
+    if ShowConfig.get_config("MrUseBG") and has_bg:
+        img.alpha_composite(bar_down, (0, 0))
+
     # info 放在背景上
     img.paste(info, (0, 190), info)
     # base_info 放在背景上
@@ -352,7 +395,6 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
     img.paste(title_bar, (190, 620), title_bar)
     img = add_footer(img, 600, 25)
     return img
-
 
 async def draw_pic_with_ring(ev: Event):
     pic = await get_event_avatar(ev, is_valid_at_param=False)

@@ -43,4 +43,9 @@ SHOW_CONIFG: Dict[str, GSC] = {
         "card",
         "jpg",
     ),
+    "MrUseBG": GsBoolConfig(
+        "自定义每日使用立绘还是背景",
+        "False为使用立绘，True为使用背景，没有背景时使用立绘",
+        False,
+    ),
 }

@@ -22,6 +22,7 @@ from ..utils.resource.RESOURCE_PATH import (
     AVATAR_PATH,
     CUSTOM_CARD_PATH,
     CUSTOM_MR_CARD_PATH,
+    CUSTOM_MR_BG_PATH,
     ROLE_PILE_PATH,
     SHARE_BG_PATH,
     WEAPON_PATH,
@@ -123,6 +124,14 @@ async def get_random_waves_role_pile(char_id: Optional[str] = None):
     path = random.choice(os.listdir(f"{ROLE_PILE_PATH}"))
     return Image.open(f"{ROLE_PILE_PATH}/{path}").convert("RGBA")
 
+async def get_random_waves_bg(char_id: Optional[str] = None):
+    custom_dir = f"{CUSTOM_MR_BG_PATH}/{char_id}"
+    if os.path.isdir(custom_dir) and len(os.listdir(custom_dir)) > 0:
+        path = random.choice(os.listdir(custom_dir))
+        if path:
+            return Image.open(f"{custom_dir}/{path}").convert("RGBA"), True
+
+    return await get_random_waves_role_pile(char_id), False
 
 async def get_role_pile(
     resource_id: Union[int, str], custom: bool = False
@@ -139,14 +148,12 @@ async def get_role_pile(
     path = ROLE_PILE_PATH / name
     return False, Image.open(path).convert("RGBA")
 
-
 async def get_role_pile_old(
     resource_id: Union[int, str], custom: bool = False
 ) -> Image.Image:
     if custom:
         custom_dir = f"{CUSTOM_MR_CARD_PATH}/{resource_id}"
         if os.path.isdir(custom_dir) and len(os.listdir(custom_dir)) > 0:
-            # logger.info(f'使用自定义角色头像: {resource_id}')
             path = random.choice(os.listdir(custom_dir))
             if path:
                 return Image.open(f"{custom_dir}/{path}").convert("RGBA")

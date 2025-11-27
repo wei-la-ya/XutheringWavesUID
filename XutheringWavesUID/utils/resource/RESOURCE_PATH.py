@@ -52,6 +52,7 @@ MAP_BUILD_PATH = BUILD_ROOT / "map" / "waves_build"
 # 自定义背景图
 CUSTOM_CARD_PATH = MAIN_PATH / "custom_role_pile"
 CUSTOM_MR_CARD_PATH = MAIN_PATH / "custom_mr_role_pile"
+CUSTOM_MR_BG_PATH = MAIN_PATH / "custom_mr_bg"
 
 # 其他的素材
 OTHER_PATH = MAIN_PATH / "other"
