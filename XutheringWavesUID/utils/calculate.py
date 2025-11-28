@@ -61,9 +61,3 @@ def get_valid_color(
     from .waves_build.calculate import get_valid_color as _func
 
     return _func(name, value, calc_temp)
-
-
-# try:
-#     from .waves_build.calculate import *
-# except ImportError:
-#     logger.warning("无法导入 calculate，将尝试下载")
