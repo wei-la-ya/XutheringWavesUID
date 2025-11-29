@@ -45,7 +45,7 @@ YES = Image.open(TEXT_PATH / "yes.png")
 YES = YES.resize((40, 40))
 NO = Image.open(TEXT_PATH / "no.png")
 NO = NO.resize((40, 40))
-bar_down = Image.open(TEXT_PATH / "bar_down.png")
+bar_down = Image.open(TEXT_PATH / "bar_down.png").convert("RGBA")
 
 based_w = 1150
 based_h = 850
@@ -386,13 +386,16 @@ async def _draw_stamina_img(ev: Event, valid: Dict) -> Image.Image:
         img.paste(pile, (550, -150), pile)
 
     # 贴个bar_down
-    img.alpha_composite(bar_down, (0, 0))
+    bar_down_alpha = bar_down.copy()
+    if ShowConfig.get_config("MrUseBG") and has_bg:
+        bar_down_alpha.putalpha(90)
+    img.alpha_composite(bar_down_alpha, (0, 624))
     # if ShowConfig.get_config("MrUseBG") and has_bg:
     #     img.alpha_composite(bar_down, (0, 0))
 
     # info 放在背景上
     if ShowConfig.get_config("MrUseBG") and has_bg:
-        img.paste(info, (0, 190), info.split()[-1].point(lambda x: x * 0.75))
+        img.paste(info, (0, 190), info)
     else:
         img.paste(info, (0, 190), info)
     # base_info 放在背景上
