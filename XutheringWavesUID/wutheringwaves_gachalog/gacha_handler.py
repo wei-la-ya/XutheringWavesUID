@@ -130,6 +130,7 @@ def merge_gacha_data(original_data: dict, latest_data: dict) -> dict:
                 "export_app_version": "v2.0",
                 "export_timestamp": int(now.timestamp()),
                 "version": "v2.0",
+                "merged_with_sanyueqi": True,
                 "uid": str(uid),
             }
             logger.debug(f"[GachaHandler] 本地记录为空，已重建 info 信息 (UID: {uid})")
