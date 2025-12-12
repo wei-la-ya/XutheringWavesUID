@@ -8,7 +8,7 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel
 from async_timeout import timeout
-from starlette.responses import HTMLResponse
+from starlette.responses import HTMLResponse, RedirectResponse
 
 from gsuid_core.bot import Bot
 from gsuid_core.config import core_config
@@ -28,7 +28,7 @@ from ..utils.resource.RESOURCE_PATH import waves_templates
 from ..wutheringwaves_user.login_succ import login_success_msg
 from ..utils.api.api import WAVES_GAME_ID
 
-cache = TimedCache(timeout=600, maxsize=10)
+cache = TimedCache(timeout=180, maxsize=10)
 
 game_title = "[鸣潮]"
 msg_error = "[鸣潮] 登录失败\n1.是否注册过库街区\n2.库街区能否查询当前鸣潮特征码数据\n"
@@ -98,7 +98,7 @@ async def send_login(bot: Bot, ev: Event, url):
             f"{game_title} 您的id为【{ev.user_id}】",
             "登录将刷新全部面板，无需立即刷新",
             f" {url}",
-            "登录地址10分钟内有效",
+            "登录地址3分钟内有效",
         ]
 
         if WutheringWavesConfig.get_config("WavesLoginForward").data:
@@ -123,7 +123,7 @@ async def page_login_local(bot: Bot, ev: Event, url):
     data = {"mobile": -1, "code": -1, "user_id": ev.user_id}
     cache.set(user_token, data)
     try:
-        async with timeout(600):
+        async with timeout(180):
             while True:
                 result = cache.get(user_token)
                 if result is None:
@@ -170,7 +170,7 @@ async def page_login_other(bot: Bot, ev: Event, url):
 
         cache.set(user_token, token)
         times = 3
-        async with timeout(600):
+        async with timeout(180):
             while True:
                 if times <= 0:
                     return await bot.send("登录服务请求失败! 请稍后再试\n", at_sender=at_sender)
@@ -260,8 +260,7 @@ async def add_cookie(ev, token, did) -> Union[WavesUser, str, None]:
 async def waves_login_index(auth: str):
     temp = cache.get(auth)
     if temp is None:
-        template = waves_templates.get_template("404.html")
-        return HTMLResponse(template.render())
+        return RedirectResponse("https://mc.kurogames.com/main")
     else:
         from ..utils.api.api import MAIN_URL
 
