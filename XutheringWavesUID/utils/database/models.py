@@ -16,6 +16,7 @@ from gsuid_core.utils.database.base_models import (
 
 exec_list.extend(
     [
+        'ALTER TABLE WavesUser DROP COLUMN pgr_sign_switch',
         'ALTER TABLE WavesUser ADD COLUMN platform TEXT DEFAULT ""',
         'ALTER TABLE WavesUser ADD COLUMN stamina_bg_value TEXT DEFAULT ""',
         'ALTER TABLE WavesUser ADD COLUMN bbs_sign_switch TEXT DEFAULT "off"',

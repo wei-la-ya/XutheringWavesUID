@@ -260,6 +260,8 @@ async def add_cookie(ev, token, did) -> Union[WavesUser, str, None]:
 async def waves_login_index(auth: str):
     temp = cache.get(auth)
     if temp is None:
+        # template = waves_templates.get_template("404.html")
+        # return HTMLResponse(template.render())
         return RedirectResponse("https://mc.kurogames.com/main")
     else:
         from ..utils.api.api import MAIN_URL
