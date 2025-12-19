@@ -31,7 +31,7 @@ from ..wutheringwaves_user.login_succ import login_success_msg
 cache = TimedCache(timeout=180, maxsize=10)
 
 game_title = "[鸣潮]"
-msg_error = "[鸣潮] 登录失败\n1.是否注册过库街区\n2.库街区能否查询当前鸣潮特征码数据\n"
+msg_error = f"{game_title} 登录失败\n1.是否注册过库街区\n2.库街区能否查询当前鸣潮特征码数据"
 
 
 async def get_url() -> tuple[str, bool]:
@@ -76,7 +76,7 @@ async def send_login(bot: Bot, ev: Event, url):
 
         im = [
             f"{game_title} 您的id为【{ev.user_id}】\n",
-            "请扫描下方二维码获取登录地址，登录将刷新全部面板，无需立即刷新\n",
+            "请用浏览器扫描获取地址，完成后将刷新全部面板，无需立即刷新",
             MessageSegment.image(await get_qrcode_base64(url, path, ev.bot_id)),
         ]
 
@@ -96,9 +96,9 @@ async def send_login(bot: Bot, ev: Event, url):
             url = f"https://docs.qq.com/scenario/link.html?url={url}"
         im = [
             f"{game_title} 您的id为【{ev.user_id}】",
-            "登录将刷新全部面板，无需立即刷新",
+            "完成后将刷新全部面板，无需立即刷新",
             f" {url}",
-            "登录地址3分钟内有效",
+            "3分钟内有效",
         ]
 
         if WutheringWavesConfig.get_config("WavesLoginForward").data:
@@ -127,14 +127,14 @@ async def page_login_local(bot: Bot, ev: Event, url):
             while True:
                 result = cache.get(user_token)
                 if result is None:
-                    return await bot.send("登录超时!\n", at_sender=at_sender)
+                    return await bot.send("登录超时!", at_sender=at_sender)
                 if result.get("mobile") != -1 and result.get("code") != -1:
                     text = f"{result['mobile']},{result['code']}"
                     cache.delete(user_token)
                     break
                 await asyncio.sleep(1)
     except asyncio.TimeoutError:
-        return await bot.send("登录超时!\n", at_sender=at_sender)
+        return await bot.send("登录超时!", at_sender=at_sender)
     except Exception as e:
         logger.error(e)
 
@@ -173,7 +173,7 @@ async def page_login_other(bot: Bot, ev: Event, url):
             token = ""
             logger.error(f"请求登录服务失败：{e}")
         if not token:
-            return await bot.send("登录服务请求失败! 请稍后再试\n", at_sender=at_sender)
+            return await bot.send("服务请求失败! 请稍后再试\n", at_sender=at_sender)
 
         await send_login(bot, ev, f"{url}/waves/i/{token}")
 
@@ -182,7 +182,7 @@ async def page_login_other(bot: Bot, ev: Event, url):
         async with timeout(180):
             while True:
                 if times <= 0:
-                    return await bot.send("登录服务请求失败! 请稍后再试\n", at_sender=at_sender)
+                    return await bot.send("服务请求失败! 请稍后再试\n", at_sender=at_sender)
 
                 result = await client.post(url + "/waves/get", json={"token": token})
                 if result.status_code != 200:
