@@ -58,7 +58,7 @@ SHOW_CONIFG: Dict[str, GSC] = {
     ),
     "CardBg": GsBoolConfig(
         "是否开启自定义面板背景",
-        "开启路径位于XutheringWavesUID/bg",
+        "开启路径位于XutheringWavesUID/show",
         False,
     ),
     "CardBgPath": GsImageConfig(
