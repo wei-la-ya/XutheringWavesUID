@@ -4,6 +4,7 @@ from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
 from gsuid_core.data_store import get_res_path
+from ...wutheringwaves_config.show_config import show_path
 
 MAIN_PATH = get_res_path() / "XutheringWavesUID"
 sys.path.append(str(MAIN_PATH))
@@ -132,6 +133,15 @@ waves_templates = Environment(
     loader=FileSystemLoader(
         [
             str(TEMP_PATH),
+        ]
+    )
+)
+
+# 自定义模板路径
+custom_waves_template = Environment(
+    loader=FileSystemLoader(
+        [
+            str(show_path),
         ]
     )
 )

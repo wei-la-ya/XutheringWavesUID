@@ -8,7 +8,7 @@ from pathlib import Path
 import httpx
 from pydantic import BaseModel
 from async_timeout import timeout
-from starlette.responses import HTMLResponse, RedirectResponse
+from starlette.responses import HTMLResponse
 
 from gsuid_core.bot import Bot
 from gsuid_core.config import core_config
@@ -25,7 +25,7 @@ from ..utils.waves_api import waves_api
 from ..wutheringwaves_user import deal
 from ..utils.database.models import WavesBind, WavesUser
 from ..wutheringwaves_config import PREFIX, WutheringWavesConfig, ShowConfig
-from ..utils.resource.RESOURCE_PATH import waves_templates
+from ..utils.resource.RESOURCE_PATH import waves_templates, custom_waves_template
 from ..wutheringwaves_user.login_succ import login_success_msg
 
 cache = TimedCache(timeout=180, maxsize=10)
@@ -281,36 +281,37 @@ async def add_cookie(ev, token, did) -> Union[WavesUser, str, None]:
 async def waves_login_index(auth: str):
     temp = cache.get(auth)
     if temp is None:
-        # 检查自定义404页面路径配置
-        custom_404_path_str = ShowConfig.get_config("Login404HtmlPath").data
-        if custom_404_path_str:
-            custom_404_path = Path(custom_404_path_str)
-            if custom_404_path.exists():
-                with open(custom_404_path, 'r', encoding='utf-8') as f:
-                    return HTMLResponse(f.read())
-        # 使用默认模板
-        template = waves_templates.get_template("404.html")
+        # 检查自定义404页面路径
+        custom_404_path = Path(ShowConfig.get_config("Login404HtmlPath").data)
+        if custom_404_path.exists():
+            # 尝试使用自定义模板
+            try:
+                template = custom_waves_template.get_template("404.html")
+            except Exception:
+                # 使用默认模板
+                template = waves_templates.get_template("404.html")
+        else:
+            # 路径不存在，使用默认模板
+            template = waves_templates.get_template("404.html")
         return HTMLResponse(template.render())
     else:
         from ..utils.api.api import MAIN_URL
 
         url, _ = await get_url()
 
-        # 检查自定义登录页面路径配置
-        custom_index_path_str = ShowConfig.get_config("LoginIndexHtmlPath").data
-        if custom_index_path_str:
-            custom_index_path = Path(custom_index_path_str)
-            if custom_index_path.exists():
-                with open(custom_index_path, 'r', encoding='utf-8') as f:
-                    template_content = f.read()
-                    # 替换模板变量
-                    template_content = template_content.replace("{{ server_url }}", url)
-                    template_content = template_content.replace("{{ auth }}", auth)
-                    template_content = template_content.replace("{{ userId }}", temp.get("user_id", ""))
-                    template_content = template_content.replace("{{ kuro_url }}", MAIN_URL)
-                    return HTMLResponse(template_content)
-        # 使用默认模板
-        template = waves_templates.get_template("index.html")
+        # 检查自定义登录页面路径
+        custom_index_path = Path(ShowConfig.get_config("LoginIndexHtmlPath").data)
+        if custom_index_path.exists():
+            # 尝试使用自定义模板
+            try:
+                template = custom_waves_template.get_template("index.html")
+            except Exception:
+                # 使用默认模板
+                template = waves_templates.get_template("index.html")
+        else:
+            # 路径不存在，使用默认模板
+            template = waves_templates.get_template("index.html")
+
         return HTMLResponse(
             template.render(
                 server_url=url,
